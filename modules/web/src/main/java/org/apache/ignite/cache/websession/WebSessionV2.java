@@ -168,6 +168,8 @@ class WebSessionV2 implements HttpSession {
         maxInactiveInterval = interval;
 
         maxInactiveIntervalChanged = true;
+        
+        genuineSes.setMaxInactiveInterval(interval);
     }
 
     /**
@@ -225,6 +227,8 @@ class WebSessionV2 implements HttpSession {
     @Override public void setAttribute(final String name, final Object val) {
         assertValid();
 
+        genuineSes.setAttribute(name, val);
+        
         if (val == null)
             removeAttribute(name);
         else
