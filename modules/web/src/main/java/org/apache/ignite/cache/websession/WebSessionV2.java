@@ -285,6 +285,10 @@ class WebSessionV2 implements HttpSession {
         assertValid();
 
         attributes().put(name, REMOVED_ATTR);
+        
+        if (genuineSes != null) {
+            genuineSes.removeAttribute(name);
+        }
     }
 
     /** {@inheritDoc} */
