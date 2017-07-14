@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import javax.cache.CacheException;
+import javax.cache.configuration.CacheEntryListenerConfiguration;
+import javax.cache.configuration.FactoryBuilder;
+import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
@@ -331,6 +334,7 @@ public class WebSessionFilter implements Filter {
     void initCache() {
         cache = webSesIgnite.cache(cacheName);
         binaryCache = webSesIgnite.cache(cacheName);
+        registerCacheEntryListenerV2(binaryCache);
 
         if (cache == null)
             throw new IgniteException("Cache for web sessions is not started (is it configured?): " + cacheName);
@@ -353,6 +357,17 @@ public class WebSessionFilter implements Filter {
                 "caching (switch to ATOMIC mode for better performance)");
 
         txEnabled = cacheCfg.getAtomicityMode() == TRANSACTIONAL;
+    }
+    
+    void registerCacheEntryListenerV2(IgniteCache<String, WebSessionEntity> binaryCache) {
+        WebSessionCacheEntryListener<String, WebSessionEntity> clientListener = new WebSessionCacheEntryListener<String, WebSessionEntity>();
+
+        // using our listener, lets create a configuration
+        CacheEntryListenerConfiguration<String, WebSessionEntity> conf = new MutableCacheEntryListenerConfiguration<String, WebSessionEntity>(
+                FactoryBuilder.factoryOf(clientListener), null, false, true);
+
+        // register to cache
+        binaryCache.registerCacheEntryListener(conf);
     }
 
     /** {@inheritDoc} */

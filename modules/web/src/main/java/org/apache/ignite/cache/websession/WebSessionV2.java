@@ -229,10 +229,6 @@ class WebSessionV2 implements HttpSession {
     @Override public void setAttribute(final String name, final Object val) {
         assertValid();
 
-        if (genuineSes != null) {
-            genuineSes.setAttribute(name, val);
-        }
-        
         if (val == null)
             removeAttribute(name);
         else
@@ -285,10 +281,6 @@ class WebSessionV2 implements HttpSession {
         assertValid();
 
         attributes().put(name, REMOVED_ATTR);
-        
-        if (genuineSes != null) {
-            genuineSes.removeAttribute(name);
-        }
     }
 
     /** {@inheritDoc} */
