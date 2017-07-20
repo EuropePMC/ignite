@@ -27,6 +27,8 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionBindingEvent;
+import javax.servlet.http.HttpSessionBindingListener;
 import javax.servlet.http.HttpSessionContext;
 import java.io.IOException;
 import java.util.Collections;
@@ -87,6 +89,18 @@ class WebSessionV2 implements HttpSession {
     /** Original session to delegate invalidation. */
     private final HttpSession genuineSes;
 
+    WebSessionV2(WebSessionEntity entity, final Marshaller marshaller) {
+        assert entity != null;
+        assert marshaller != null;
+        
+        this.entity = entity;
+        this.marshaller = marshaller;
+        
+        this.genuineSes = null;
+        this.ctx = null;
+        this.accessTime = 0;
+    }
+    
     /**
      * Constructs new web session.
      *
@@ -280,6 +294,9 @@ class WebSessionV2 implements HttpSession {
     @Override public void removeAttribute(final String name) {
         assertValid();
 
+        // Notify the attribute before setting it to REMOVED_ATTR
+        notifyAttributeBeingUnbound(name);
+        
         attributes().put(name, REMOVED_ATTR);
     }
 
@@ -409,5 +426,21 @@ class WebSessionV2 implements HttpSession {
     private void assertValid() {
         if (invalidated)
             throw new IllegalStateException("Session was invalidated.");
+    }
+    
+    /**
+     * Notifies the attribute that it is being unbound from a session and identifies the session.
+     * 
+     * @param name
+     */
+    private void notifyAttributeBeingUnbound(final String name) {
+        Object value = getAttribute(name);
+        
+        // Call the valueUnbound() method if any
+        HttpSessionBindingEvent event = null;
+        if (value != null && value instanceof HttpSessionBindingListener) {
+            event = new HttpSessionBindingEvent(this, name, value);
+            ((HttpSessionBindingListener) value).valueUnbound(event);
+        }
     }
 }

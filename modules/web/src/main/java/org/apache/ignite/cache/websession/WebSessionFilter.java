@@ -359,15 +359,23 @@ public class WebSessionFilter implements Filter {
         txEnabled = cacheCfg.getAtomicityMode() == TRANSACTIONAL;
     }
     
-    void registerCacheEntryListenerV2(IgniteCache<String, WebSessionEntity> binaryCache) {
-        WebSessionCacheEntryListener<String, WebSessionEntity> clientListener = new WebSessionCacheEntryListener<String, WebSessionEntity>();
-
-        // using our listener, lets create a configuration
-        CacheEntryListenerConfiguration<String, WebSessionEntity> conf = new MutableCacheEntryListenerConfiguration<String, WebSessionEntity>(
-                FactoryBuilder.factoryOf(clientListener), null, false, true);
-
-        // register to cache
-        binaryCache.registerCacheEntryListener(conf);
+    /**
+     * Register expired and removed event listeners with the given cache
+     *  
+     * @param binaryCache
+     */
+    private void registerCacheEntryListenerV2(IgniteCache<String, WebSessionEntity> binaryCache) {
+        // Register a listener in the event of cache being expired
+        WebSessionCacheEntryExpiredListener<String, WebSessionEntity> expiredListener = new WebSessionCacheEntryExpiredListener<String, WebSessionEntity>(marshaller);
+        CacheEntryListenerConfiguration<String, WebSessionEntity> expiredConf = new MutableCacheEntryListenerConfiguration<String, WebSessionEntity>(
+                FactoryBuilder.factoryOf(expiredListener), null, true, false);
+        binaryCache.registerCacheEntryListener(expiredConf);
+        
+        // Register a listener in the event of cache being removed
+        WebSessionCacheEntryRemovedListener<String, WebSessionEntity> removedListener = new WebSessionCacheEntryRemovedListener<String, WebSessionEntity>(marshaller);
+        CacheEntryListenerConfiguration<String, WebSessionEntity> removedConf = new MutableCacheEntryListenerConfiguration<String, WebSessionEntity>(
+                FactoryBuilder.factoryOf(removedListener), null, true, false);
+        binaryCache.registerCacheEntryListener(removedConf);
     }
 
     /** {@inheritDoc} */
