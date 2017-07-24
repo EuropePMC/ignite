@@ -235,6 +235,10 @@ class WebSession implements HttpSession, Externalizable {
     /** {@inheritDoc} */
     @Override public void setMaxInactiveInterval(int interval) {
         maxInactiveInterval = interval;
+        
+        if (genSes != null) {
+            genSes.setMaxInactiveInterval(interval);
+        }
     }
 
     /** {@inheritDoc} */
