@@ -29,7 +29,7 @@ public class WebSessionCacheEntryRemovedListener<K, V> implements CacheEntryRemo
         }
         
         events.forEach((e)->{
-            WebSessionEntity webSessionEntity = e.getValue();
+            WebSessionEntity webSessionEntity = e.getOldValue();
             if (webSessionEntity == null) {
                 return;
             }
