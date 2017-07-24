@@ -294,9 +294,6 @@ class WebSessionV2 implements HttpSession {
     @Override public void removeAttribute(final String name) {
         assertValid();
 
-        // Notify the attribute before setting it to REMOVED_ATTR
-        notifyAttributeBeingUnbound(name);
-        
         attributes().put(name, REMOVED_ATTR);
     }
 
@@ -433,7 +430,7 @@ class WebSessionV2 implements HttpSession {
      * 
      * @param name
      */
-    private void notifyAttributeBeingUnbound(final String name) {
+    public void notifyAttributeBeingUnbound(final String name) {
         Object value = getAttribute(name);
         
         // Call the valueUnbound() method if any

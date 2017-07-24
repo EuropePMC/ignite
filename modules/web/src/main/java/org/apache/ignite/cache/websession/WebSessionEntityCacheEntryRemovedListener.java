@@ -18,11 +18,14 @@
 package org.apache.ignite.cache.websession;
 
 import java.io.Serializable;
-import java.util.Enumeration;
+import java.util.Map;
 
 import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.CacheEntryListenerException;
 import javax.cache.event.CacheEntryRemovedListener;
+
+import org.apache.ignite.internal.websession.WebSessionEntity;
+import org.apache.ignite.marshaller.Marshaller;
 
 /**
  * On session being removed from the cache, notify its attributes that they are being unbound from the session
@@ -30,34 +33,40 @@ import javax.cache.event.CacheEntryRemovedListener;
  * @param <K>
  * @param <V>
  */
-public class WebSessionCacheEntryRemovedListener<K, V> implements CacheEntryRemovedListener<String, WebSession>, Serializable {
+public class WebSessionEntityCacheEntryRemovedListener<K, V> implements CacheEntryRemovedListener<String, WebSessionEntity>, Serializable {
     private static final long serialVersionUID = 1L;
     
-    public static void notifyAttributes(Iterable<CacheEntryEvent<? extends String, ? extends WebSession>> events) {
+    private final Marshaller marshaller;
+    
+    public static void notifyAttributes(Iterable<CacheEntryEvent<? extends String, ? extends WebSessionEntity>> events, final Marshaller marshaller) {
         if (events == null) {
             return;
         }
         
         events.forEach((e)->{
-            WebSession webSession = e.getOldValue();
-            if (webSession == null) {
+            WebSessionEntity webSessionEntity = e.getOldValue();
+            if (webSessionEntity == null) {
                 return;
             }
             
-            Enumeration<String> attrNames = webSession.getAttributeNames();
-            if (attrNames == null) {
+            WebSessionV2 webSessionV2 = new WebSessionV2(webSessionEntity, marshaller);            
+            Map<String, byte[]> attrs = webSessionEntity.attributes();
+            if (attrs == null) {
                 return;
             }
             
-            while (attrNames.hasMoreElements()) {
-                String name = attrNames.nextElement();
-                webSession.notifyAttributeBeingUnbound(name);
-            }            
+            attrs.forEach((name, value) -> {
+                webSessionV2.notifyAttributeBeingUnbound(name);
+            });
         });
     }
 
     @Override
-    public void onRemoved(Iterable<CacheEntryEvent<? extends String, ? extends WebSession>> events) throws CacheEntryListenerException {
-        notifyAttributes(events);
+    public void onRemoved(Iterable<CacheEntryEvent<? extends String, ? extends WebSessionEntity>> events) throws CacheEntryListenerException {
+        notifyAttributes(events, marshaller);
     }
+
+    public WebSessionEntityCacheEntryRemovedListener(final Marshaller marshaller) {
+        this.marshaller = marshaller;
+    }    
 }

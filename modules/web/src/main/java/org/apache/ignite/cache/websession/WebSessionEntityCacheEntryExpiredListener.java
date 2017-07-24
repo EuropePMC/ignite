@@ -23,17 +23,26 @@ import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.CacheEntryExpiredListener;
 import javax.cache.event.CacheEntryListenerException;
 
+import org.apache.ignite.internal.websession.WebSessionEntity;
+import org.apache.ignite.marshaller.Marshaller;
+
 /**
  * On session expiration, notify the attributes that they are being unbound from the session  
  * 
  * @param <K>
  * @param <V>
  */
-public class WebSessionCacheEntryExpiredListener<K, V> implements CacheEntryExpiredListener<String, WebSession>, Serializable {
+public class WebSessionEntityCacheEntryExpiredListener<K, V> implements CacheEntryExpiredListener<String, WebSessionEntity>, Serializable {
     private static final long serialVersionUID = 1L;
     
+    private final Marshaller marshaller;
+
     @Override
-    public void onExpired(Iterable<CacheEntryEvent<? extends String, ? extends WebSession>> events) throws CacheEntryListenerException {
-        WebSessionCacheEntryRemovedListener.notifyAttributes(events);
+    public void onExpired(Iterable<CacheEntryEvent<? extends String, ? extends WebSessionEntity>> events) throws CacheEntryListenerException {
+        WebSessionEntityCacheEntryRemovedListener.notifyAttributes(events, marshaller);
+    }
+
+    public WebSessionEntityCacheEntryExpiredListener(Marshaller marshaller) {
+        this.marshaller = marshaller;
     }
 }

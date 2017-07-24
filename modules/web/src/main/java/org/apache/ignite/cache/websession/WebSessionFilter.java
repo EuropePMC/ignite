@@ -333,8 +333,10 @@ public class WebSessionFilter implements Filter {
     @SuppressWarnings("unchecked")
     void initCache() {
         cache = webSesIgnite.cache(cacheName);
+        registerCacheEntryListeners(cache);
+        
         binaryCache = webSesIgnite.cache(cacheName);
-        registerCacheEntryListenerV2(binaryCache);
+        registerBinaryCacheEntryListeners(binaryCache);
 
         if (cache == null)
             throw new IgniteException("Cache for web sessions is not started (is it configured?): " + cacheName);
@@ -361,18 +363,39 @@ public class WebSessionFilter implements Filter {
     
     /**
      * Register expired and removed event listeners with the given cache
-     *  
+     * 
+     * @param cache
+     */
+    private void registerCacheEntryListeners(IgniteCache<String, WebSession> cache) {
+        // Register a listener in the event of cache being expired
+        WebSessionCacheEntryExpiredListener<String, WebSession> expiredListener = new WebSessionCacheEntryExpiredListener<String, WebSession>();
+        CacheEntryListenerConfiguration<String, WebSession> expiredConf = new MutableCacheEntryListenerConfiguration<String, WebSession>(
+                FactoryBuilder.factoryOf(expiredListener), null, true, false);
+        cache.registerCacheEntryListener(expiredConf);
+
+        // Register a listener in the event of cache being removed
+        WebSessionCacheEntryRemovedListener<String, WebSession> removedListener = new WebSessionCacheEntryRemovedListener<String, WebSession>();
+        CacheEntryListenerConfiguration<String, WebSession> removedConf = new MutableCacheEntryListenerConfiguration<String, WebSession>(
+                FactoryBuilder.factoryOf(removedListener), null, true, false);
+        cache.registerCacheEntryListener(removedConf);
+    }
+
+    /**
+     * Register expired and removed event listeners with the given binaryCache
+     * 
      * @param binaryCache
      */
-    private void registerCacheEntryListenerV2(IgniteCache<String, WebSessionEntity> binaryCache) {
+    private void registerBinaryCacheEntryListeners(IgniteCache<String, WebSessionEntity> binaryCache) {
         // Register a listener in the event of cache being expired
-        WebSessionCacheEntryExpiredListener<String, WebSessionEntity> expiredListener = new WebSessionCacheEntryExpiredListener<String, WebSessionEntity>(marshaller);
+        WebSessionEntityCacheEntryExpiredListener<String, WebSessionEntity> expiredListener = new WebSessionEntityCacheEntryExpiredListener<String, WebSessionEntity>(
+                marshaller);
         CacheEntryListenerConfiguration<String, WebSessionEntity> expiredConf = new MutableCacheEntryListenerConfiguration<String, WebSessionEntity>(
                 FactoryBuilder.factoryOf(expiredListener), null, true, false);
         binaryCache.registerCacheEntryListener(expiredConf);
-        
+
         // Register a listener in the event of cache being removed
-        WebSessionCacheEntryRemovedListener<String, WebSessionEntity> removedListener = new WebSessionCacheEntryRemovedListener<String, WebSessionEntity>(marshaller);
+        WebSessionEntityCacheEntryRemovedListener<String, WebSessionEntity> removedListener = new WebSessionEntityCacheEntryRemovedListener<String, WebSessionEntity>(
+                marshaller);
         CacheEntryListenerConfiguration<String, WebSessionEntity> removedConf = new MutableCacheEntryListenerConfiguration<String, WebSessionEntity>(
                 FactoryBuilder.factoryOf(removedListener), null, true, false);
         binaryCache.registerCacheEntryListener(removedConf);
